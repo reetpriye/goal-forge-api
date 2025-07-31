@@ -15,6 +15,23 @@ import java.util.Optional;
 
 @Service
 public class GoalService {
+    public Goal completeGoal(String id) {
+        Goal goal = goalRepository.findById(id)
+                .orElseThrow(() -> new GoalNotFoundException("Goal not found"));
+        if ("COMPLETED".equals(goal.getStatus())) {
+            throw new RuntimeException("Goal is already completed");
+        }
+        goal.setStatus("COMPLETED");
+        return goalRepository.save(goal);
+    }
+    public List<Goal> getGoalsByUser(String userId) {
+        return goalRepository.findByUserId(userId);
+    }
+    public void deleteGoalsByUser(String userId) {
+        if (userId == null) return;
+        List<Goal> userGoals = goalRepository.findByUserId(userId);
+        goalRepository.deleteAll(userGoals);
+    }
     private static final Logger logger = LoggerFactory.getLogger(GoalService.class);
 
     private final GoalRepository goalRepository;
@@ -43,10 +60,6 @@ public class GoalService {
         return goalRepository.findAll();
     }
 
-    public void deleteGoal(String id) {
-        logger.info("Deleting goal: {}", id);
-        goalRepository.deleteById(id);
-    }
 
     public void deleteAllGoals() {
         goalRepository.deleteAll();

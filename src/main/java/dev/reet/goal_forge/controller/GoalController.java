@@ -13,6 +13,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/goals")
 public class GoalController {
+    @PostMapping("/{id}/start")
+    public Goal startGoal(@PathVariable String id) {
+        return goalService.startGoal(id);
+    }
+    @PostMapping("/{id}/complete")
+    public Goal completeGoal(@PathVariable String id) {
+        return goalService.completeGoal(id);
+    }
 
     private final GoalService goalService;
 
@@ -21,7 +29,8 @@ public class GoalController {
     }
 
     @PostMapping
-    public Goal createGoal(@RequestBody Goal goal) {
+    public Goal createGoal(@RequestBody Goal goal, @RequestAttribute String userId) {
+        goal.setUserId(userId);
         return goalService.createGoal(goal);
     }
 
@@ -48,14 +57,10 @@ public class GoalController {
     }
 
     @GetMapping
-    public List<Goal> getAllGoals() {
-        return goalService.getAllGoals();
+    public List<Goal> getAllGoals(@RequestAttribute String userId) {
+        return goalService.getGoalsByUser(userId);
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteGoal(@PathVariable String id) {
-        goalService.deleteGoal(id);
-    }
 
     // Download all goals as JSON
     @GetMapping("/export")
@@ -65,21 +70,21 @@ public class GoalController {
 
     // Upload goals with mode: append or reset
     @PostMapping("/import")
-    public List<Goal> importGoals(@RequestBody Map<String, Object> payload) {
+    public List<Goal> importGoals(@RequestBody Map<String, Object> payload, @RequestAttribute String userId) {
         String mode = (String) payload.getOrDefault("mode", "append");
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         List<Goal> goals = mapper.convertValue(payload.get("goals"), new com.fasterxml.jackson.core.type.TypeReference<List<Goal>>() {});
-        // Validate and normalize progressType for each goal
         for (Goal goal : goals) {
             if (goal.getProgressType() == null ||
                 !(goal.getProgressType().equalsIgnoreCase("hr") || goal.getProgressType().equalsIgnoreCase("cnt"))) {
                 throw new IllegalArgumentException("progressType must be 'hr' or 'cnt' (case-insensitive)");
             }
             goal.setProgressType(goal.getProgressType().toLowerCase());
+            goal.setUserId(userId);
         }
         if ("reset".equalsIgnoreCase(mode)) {
-            goalService.deleteAllGoals();
+            goalService.deleteGoalsByUser(userId);
         }
         return goalService.saveAllGoals(goals);
     }

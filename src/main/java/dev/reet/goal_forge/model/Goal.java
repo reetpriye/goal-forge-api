@@ -13,6 +13,7 @@ import java.time.LocalDate;
 public class Goal {
     @Id
     private String id;
+    private String userId; // Reference to User.id, null for anonymous
     private String goalName;
     private String progressType; // Hr or Cnt
     private double estimatedEffort;
