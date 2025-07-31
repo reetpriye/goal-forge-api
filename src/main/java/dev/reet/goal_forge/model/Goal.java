@@ -17,6 +17,7 @@ public class Goal {
     private String goalName;
     private String progressType; // Hr or Cnt
     private double estimatedEffort;
+    @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = ProgressCalendarDeserializer.class)
     private Map<String, Double> progressCalendar = new HashMap<>(); // date -> effort
     private double investedEffort = 0.0;
     private double remainingEffort = 0.0;

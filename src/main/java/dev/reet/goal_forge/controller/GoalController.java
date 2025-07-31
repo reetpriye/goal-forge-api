@@ -1,7 +1,9 @@
 package dev.reet.goal_forge.controller;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import dev.reet.goal_forge.exception.GoalNotFoundException;
 import dev.reet.goal_forge.model.Goal;
 import dev.reet.goal_forge.service.GoalService;
 import org.springframework.web.bind.annotation.*;
@@ -13,14 +15,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/goals")
 public class GoalController {
-    @PostMapping("/{id}/start")
-    public Goal startGoal(@PathVariable String id) {
-        return goalService.startGoal(id);
-    }
-    @PostMapping("/{id}/complete")
-    public Goal completeGoal(@PathVariable String id) {
-        return goalService.completeGoal(id);
-    }
 
     private final GoalService goalService;
 
@@ -31,12 +25,22 @@ public class GoalController {
     @PostMapping
     public Goal createGoal(@RequestBody Goal goal, @RequestAttribute String userId) {
         goal.setUserId(userId);
-        return goalService.createGoal(goal);
+        return goalService.addGoal(goal);
     }
-
-    @GetMapping("/{id}")
-    public Goal getGoal(@PathVariable String id) {
-        return goalService.getGoal(id).orElseThrow(() -> new GoalNotFoundException("Goal not found"));
+    
+    @DeleteMapping("/{id}")
+    public void deleteGoal(@PathVariable String id) {
+        goalService.deleteGoal(id);
+    }
+   
+    @PostMapping("/{id}/start")
+    public Goal startGoal(@PathVariable String id) {
+        return goalService.startGoal(id);
+    }
+   
+    @PostMapping("/{id}/complete")
+    public Goal completeGoal(@PathVariable String id) {
+        return goalService.completeGoal(id);
     }
 
     @PostMapping("/{id}/progress")
@@ -58,14 +62,7 @@ public class GoalController {
 
     @GetMapping
     public List<Goal> getAllGoals(@RequestAttribute String userId) {
-        return goalService.getGoalsByUser(userId);
-    }
-
-
-    // Download all goals as JSON
-    @GetMapping("/export")
-    public List<Goal> exportGoals() {
-        return goalService.getAllGoals();
+        return goalService.getGoals(userId);
     }
 
     // Upload goals with mode: append or reset
@@ -84,8 +81,30 @@ public class GoalController {
             goal.setUserId(userId);
         }
         if ("reset".equalsIgnoreCase(mode)) {
-            goalService.deleteGoalsByUser(userId);
+            goalService.deleteGoals(userId);
         }
         return goalService.saveAllGoals(goals);
+    }
+
+    // Export all user goals as downloadable JSON file
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportGoals(@RequestAttribute String userId) throws Exception {
+        List<Goal> goals = goalService.getGoals(userId);
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        byte[] jsonBytes = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(goals);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentDispositionFormData("attachment", "goals.json");
+        return ResponseEntity.ok().headers(headers).body(jsonBytes);
+    }
+}
+
+@RestController
+@RequestMapping("/api")
+class PingController {
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("pong");
     }
 }
