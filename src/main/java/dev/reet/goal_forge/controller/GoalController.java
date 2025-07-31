@@ -70,6 +70,14 @@ public class GoalController {
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         List<Goal> goals = mapper.convertValue(payload.get("goals"), new com.fasterxml.jackson.core.type.TypeReference<List<Goal>>() {});
+        // Validate and normalize progressType for each goal
+        for (Goal goal : goals) {
+            if (goal.getProgressType() == null ||
+                !(goal.getProgressType().equalsIgnoreCase("hr") || goal.getProgressType().equalsIgnoreCase("cnt"))) {
+                throw new IllegalArgumentException("progressType must be 'hr' or 'cnt' (case-insensitive)");
+            }
+            goal.setProgressType(goal.getProgressType().toLowerCase());
+        }
         if ("reset".equalsIgnoreCase(mode)) {
             goalService.deleteAllGoals();
         }

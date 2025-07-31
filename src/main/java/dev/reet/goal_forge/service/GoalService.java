@@ -6,6 +6,8 @@ import dev.reet.goal_forge.exception.GoalNotFoundException;
 import dev.reet.goal_forge.model.Goal;
 import dev.reet.goal_forge.repository.GoalRepository;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Optional;
 
 @Service
 public class GoalService {
+    private static final Logger logger = LoggerFactory.getLogger(GoalService.class);
 
     private final GoalRepository goalRepository;
 
@@ -25,6 +28,10 @@ public class GoalService {
         goal.setRemainingEffort(goal.getEstimatedEffort());
         goal.setStatus("NOT_STARTED");
         goal.setStartDate(null);
+        if (goal.getProgressType() != null) {
+            goal.setProgressType(goal.getProgressType().toLowerCase());
+        }
+        logger.info("Creating goal: {}", goal);
         return goalRepository.save(goal);
     }
 
@@ -37,6 +44,7 @@ public class GoalService {
     }
 
     public void deleteGoal(String id) {
+        logger.info("Deleting goal: {}", id);
         goalRepository.deleteById(id);
     }
 
