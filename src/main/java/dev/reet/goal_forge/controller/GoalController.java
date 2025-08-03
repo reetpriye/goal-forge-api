@@ -74,8 +74,9 @@ public class GoalController {
         List<Goal> goals = mapper.convertValue(payload.get("goals"), new com.fasterxml.jackson.core.type.TypeReference<List<Goal>>() {});
         for (Goal goal : goals) {
             if (goal.getProgressType() == null ||
-                !(goal.getProgressType().equalsIgnoreCase("hr") || goal.getProgressType().equalsIgnoreCase("cnt"))) {
-                throw new IllegalArgumentException("progressType must be 'hr' or 'cnt' (case-insensitive)");
+                !(goal.getProgressType().equalsIgnoreCase("dur") || 
+                  goal.getProgressType().equalsIgnoreCase("cnt"))) {
+                throw new IllegalArgumentException("progressType must be 'dur' or 'cnt' (case-insensitive)");
             }
             goal.setProgressType(goal.getProgressType().toLowerCase());
             goal.setUserId(userId);
@@ -97,6 +98,16 @@ public class GoalController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setContentDispositionFormData("attachment", "goals.json");
         return ResponseEntity.ok().headers(headers).body(jsonBytes);
+    }
+
+    // Update goal display order
+    @PutMapping("/reorder")
+    public List<Goal> reorderGoals(@RequestBody Map<String, List<String>> payload, @RequestAttribute String userId) {
+        List<String> goalIds = payload.get("goalIds");
+        if (goalIds == null || goalIds.isEmpty()) {
+            throw new IllegalArgumentException("goalIds is required and cannot be empty");
+        }
+        return goalService.updateGoalOrders(userId, goalIds);
     }
 }
 

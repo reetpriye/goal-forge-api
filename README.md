@@ -7,6 +7,11 @@ A RESTful API for managing user goals, tracking progress, and handling goal life
 /api/goals
 ```
 
+## Progress Types
+The API supports two types of progress tracking:
+- **dur** (Duration): Track time-based goals where users can input hours and minutes (e.g., "2hr 30min" gets converted to total minutes)
+- **cnt** (Count): Track count-based goals (e.g., "Read 10 books", "Complete 5 projects")
+
 ## Endpoints
 
 ### Create Goal
@@ -95,7 +100,7 @@ A RESTful API for managing user goals, tracking progress, and handling goal life
   "remainingEffort": 10.0,
   "status": "NOT_STARTED",
   "startDate": "2025-07-31",
-  "progressType": "daily",
+  "progressType": "dur",
   "progressCalendar": {
     "2025-07-31": 2.0
   }

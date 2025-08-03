@@ -15,7 +15,7 @@ public class Goal {
     private String id;
     private String userId; // Reference to User.id, null for anonymous
     private String goalName;
-    private String progressType; // Hr or Cnt
+    private String progressType; // dur (duration - hrs/mins) or cnt
     private double estimatedEffort;
     @com.fasterxml.jackson.databind.annotation.JsonDeserialize(using = ProgressCalendarDeserializer.class)
     private Map<String, Double> progressCalendar = new HashMap<>(); // date -> effort
@@ -23,4 +23,5 @@ public class Goal {
     private double remainingEffort = 0.0;
     private LocalDate startDate; // null until started
     private String status = "NOT_STARTED"; // NOT_STARTED, ACTIVE, PAUSED, COMPLETED
+    private int displayOrder = 0; // For ordering goals in the UI
 }

@@ -8,4 +8,5 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 public interface GoalRepository extends MongoRepository<Goal, String> {
     List<Goal> findByUserId(String userId);
     List<Goal> findByUserIdIsNull();
+    List<Goal> findByUserIdOrderByDisplayOrder(String userId);
 }

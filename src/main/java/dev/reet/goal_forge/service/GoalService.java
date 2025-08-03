@@ -35,6 +35,15 @@ public class GoalService {
         if (goal.getProgressType() != null) {
             goal.setProgressType(goal.getProgressType().toLowerCase());
         }
+        
+        // Set display order to be at the end of current goals
+        if (goal.getUserId() != null) {
+            List<Goal> userGoals = goalRepository.findByUserId(goal.getUserId());
+            goal.setDisplayOrder(userGoals.size());
+        } else {
+            goal.setDisplayOrder(0);
+        }
+        
         logger.info("Creating goal: {}", goal);
         return goalRepository.save(goal);
     }
@@ -51,10 +60,10 @@ public class GoalService {
     /**
      * Route: GET /api/goals/user/{userId}
      * Args: String userId (path variable)
-     * Description: Retrieves all goals for a specific user.
+     * Description: Retrieves all goals for a specific user ordered by displayOrder.
      */
     public List<Goal> getGoals(String userId) {
-        return goalRepository.findByUserId(userId);
+        return goalRepository.findByUserIdOrderByDisplayOrder(userId);
     }
 
     /**
@@ -167,6 +176,37 @@ public class GoalService {
         goalRepository.deleteAll(userGoals);
     }
     
+    /**
+     * Route: PUT /api/goals/reorder
+     * Args: List<String> goalIds (request body) - ordered list of goal IDs
+     * Description: Updates the displayOrder of goals based on their position in the provided list.
+     */
+    public List<Goal> updateGoalOrders(String userId, List<String> goalIds) {
+        logger.info("Updating goal orders for user: {} with {} goals", userId, goalIds.size());
+        
+        // Validate that all goals belong to the user
+        List<Goal> userGoals = goalRepository.findByUserId(userId);
+        List<String> userGoalIds = userGoals.stream().map(Goal::getId).toList();
+        
+        for (String goalId : goalIds) {
+            if (!userGoalIds.contains(goalId)) {
+                throw new GoalNotFoundException("Goal not found or doesn't belong to user: " + goalId);
+            }
+        }
+        
+        // Update display order for each goal
+        for (int i = 0; i < goalIds.size(); i++) {
+            String goalId = goalIds.get(i);
+            Goal goal = goalRepository.findById(goalId)
+                    .orElseThrow(() -> new GoalNotFoundException("Goal not found: " + goalId));
+            goal.setDisplayOrder(i);
+            goalRepository.save(goal);
+        }
+        
+        // Return the updated goals in order
+        return goalRepository.findByUserIdOrderByDisplayOrder(userId);
+    }
+
     /**
      * Route: POST /api/goals/batch
      * Args: List<Goal> goals (request body)
