@@ -182,6 +182,42 @@ public class GoalService {
     }
     
     /**
+     * Route: PUT /api/goals/{id}
+     * Args: String id (path variable), Goal updatedGoal (request body), String userId
+     * Description: Updates an existing goal with new data while preserving certain fields.
+     */
+    public Goal updateGoal(String id, Goal updatedGoal, String userId) {
+        Goal existingGoal = goalRepository.findById(id)
+                .orElseThrow(() -> new GoalNotFoundException("Goal not found: " + id));
+        
+        // Verify that the goal belongs to the user
+        if (!userId.equals(existingGoal.getUserId())) {
+            throw new GoalNotFoundException("Goal not found or doesn't belong to user: " + id);
+        }
+        
+        // Update only the fields that can be modified
+        if (updatedGoal.getGoalName() != null) {
+            existingGoal.setGoalName(updatedGoal.getGoalName());
+        }
+        
+        if (updatedGoal.getProgressType() != null) {
+            existingGoal.setProgressType(updatedGoal.getProgressType().toLowerCase());
+        }
+        
+        if (updatedGoal.getEstimatedEffort() > 0) {
+            existingGoal.setEstimatedEffort(updatedGoal.getEstimatedEffort());
+            // Recalculate remaining effort when estimated effort changes
+            existingGoal.setRemainingEffort(updatedGoal.getEstimatedEffort() - existingGoal.getInvestedEffort());
+        }
+        
+        // Preserve important fields that shouldn't be changed via edit
+        // - userId, displayOrder, investedEffort, progressCalendar, status, startDate stay the same
+        
+        logger.info("Updating goal: {} for user: {}", id, userId);
+        return goalRepository.save(existingGoal);
+    }
+
+    /**
      * Route: PUT /api/goals/reorder
      * Args: List<String> goalIds (request body) - ordered list of goal IDs
      * Description: Updates the displayOrder of goals based on their position in the provided list.

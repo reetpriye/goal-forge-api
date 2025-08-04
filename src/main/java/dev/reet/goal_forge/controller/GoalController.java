@@ -109,6 +109,12 @@ public class GoalController {
         }
         return goalService.updateGoalOrders(userId, goalIds);
     }
+
+    // Update/Edit a goal
+    @PutMapping("/{id}")
+    public Goal updateGoal(@PathVariable String id, @RequestBody Goal updatedGoal, @RequestAttribute String userId) {
+        return goalService.updateGoal(id, updatedGoal, userId);
+    }
 }
 
 @RestController
