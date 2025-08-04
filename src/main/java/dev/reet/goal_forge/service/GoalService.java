@@ -12,6 +12,11 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.Map;
+import java.util.ArrayList;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toMap;
 
 @Service
 public class GoalService {
@@ -184,23 +189,33 @@ public class GoalService {
     public List<Goal> updateGoalOrders(String userId, List<String> goalIds) {
         logger.info("Updating goal orders for user: {} with {} goals", userId, goalIds.size());
         
-        // Validate that all goals belong to the user
+        // Fetch user goals once and create efficient lookup structures
         List<Goal> userGoals = goalRepository.findByUserId(userId);
-        List<String> userGoalIds = userGoals.stream().map(Goal::getId).toList();
+        Set<String> userGoalIds = userGoals.stream().map(Goal::getId).collect(toSet());
+        Map<String, Goal> goalMap = userGoals.stream().collect(toMap(Goal::getId, goal -> goal));
         
+        // Validate that all goals belong to the user (O(n) instead of O(n×m))
         for (String goalId : goalIds) {
             if (!userGoalIds.contains(goalId)) {
                 throw new GoalNotFoundException("Goal not found or doesn't belong to user: " + goalId);
             }
         }
         
-        // Update display order for each goal
+        // Collect all goals that need updating
+        List<Goal> goalsToUpdate = new ArrayList<>();
         for (int i = 0; i < goalIds.size(); i++) {
             String goalId = goalIds.get(i);
-            Goal goal = goalRepository.findById(goalId)
-                    .orElseThrow(() -> new GoalNotFoundException("Goal not found: " + goalId));
-            goal.setDisplayOrder(i);
-            goalRepository.save(goal);
+            Goal goal = goalMap.get(goalId); // O(1) lookup instead of database call
+            if (goal != null && goal.getDisplayOrder() != i) { // Only update if order changed
+                goal.setDisplayOrder(i);
+                goalsToUpdate.add(goal);
+            }
+        }
+        
+        // Batch update all modified goals (single database operation)
+        if (!goalsToUpdate.isEmpty()) {
+            goalRepository.saveAll(goalsToUpdate);
+            logger.info("Updated display order for {} goals", goalsToUpdate.size());
         }
         
         // Return the updated goals in order
