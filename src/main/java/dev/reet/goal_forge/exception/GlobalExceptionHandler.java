@@ -48,6 +48,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
+    @ExceptionHandler(GoalNotStartedException.class)
+    public ResponseEntity<Map<String, Object>> handleGoalNotStartedException(GoalNotStartedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "GoalNotStartedException");
+        body.put("message", ex.getMessage());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(GoalNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleGoalNotFoundException(GoalNotFoundException ex) {
         Map<String, Object> body = new HashMap<>();

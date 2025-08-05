@@ -3,6 +3,7 @@ package dev.reet.goal_forge.service;
 import dev.reet.goal_forge.exception.GoalPausedException;
 import dev.reet.goal_forge.exception.PreviousDateEffortException;
 import dev.reet.goal_forge.exception.GoalNotFoundException;
+import dev.reet.goal_forge.exception.GoalNotStartedException;
 import dev.reet.goal_forge.model.Goal;
 import dev.reet.goal_forge.repository.GoalRepository;
 import org.springframework.stereotype.Service;
@@ -79,7 +80,14 @@ public class GoalService {
     public Goal addProgress(String goalId, LocalDate date, double effort) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new GoalNotFoundException("Goal not found"));
+        
+        // Check if goal has been started
+        if ("NOT_STARTED".equals(goal.getStatus())) {
+            throw new GoalNotStartedException("Cannot add progress to a goal that has not been started. Please start the goal first.");
+        }
+        
         if ("PAUSED".equals(goal.getStatus())) throw new GoalPausedException("Goal is paused");
+        
         LocalDate today = LocalDate.now();
         if (date.isBefore(today)) {
             throw new PreviousDateEffortException("Effort cannot be added for previous days. Today: " + today);
