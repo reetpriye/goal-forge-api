@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -88,7 +89,7 @@ public class GoalService {
         
         if ("PAUSED".equals(goal.getStatus())) throw new GoalPausedException("Goal is paused");
         
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.systemDefault());
         if (date.isBefore(today)) {
             throw new PreviousDateEffortException("Effort cannot be added for previous days. Today: " + today);
         }
@@ -117,7 +118,8 @@ public class GoalService {
         if (!"NOT_STARTED".equals(goal.getStatus())) {
             throw new RuntimeException("Goal already started or completed");
         }
-        goal.setStartDate(LocalDate.now());
+        // Use system default timezone to get the correct local date
+        goal.setStartDate(LocalDate.now(ZoneId.systemDefault()));
         goal.setStatus("ACTIVE");
         return goalRepository.save(goal);
     }
